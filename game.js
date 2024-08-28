@@ -78,7 +78,6 @@ class GameScene extends Phaser.Scene {
         const screenHeight = this.game.config.height;
 
         //Sound
-        // this.vfx = new VFXLibrary(this);
 
         this.sounds = {};
         for (const key in soundsLoader) {
@@ -182,6 +181,8 @@ class GameScene extends Phaser.Scene {
         // this.bestClearText = this.add.bitmapText(screenWidth / 2, 90, 'pixelfont', 'Best Clear: 0.00', 18).setOrigin(0.5);
         this.countdownText = this.add.bitmapText(screenWidth / 2, screenHeight - 50, 'pixelfont', '', 64).setOrigin(0.5);
         this.add.bitmapText(screenWidth / 2, screenHeight - 20, 'pixelfont', 'Arrow keys to move', 18).setOrigin(0.5);
+        this.finalText = this.add.bitmapText(screenWidth / 2, screenHeight/2, 'pixelfont', `Well Played`, 28).setOrigin(0.5).setAlpha(0);
+
 
         this.physics.world.setBounds(40, 0, screenWidth-80, screenHeight);
         this.startRoundCountdown();
@@ -333,8 +334,8 @@ class GameScene extends Phaser.Scene {
         if (this.over) return;
     
         if (this.movementEnabled) {
-        // this.vfx.rotateGameObject(this.ball);
-        this.playerCharacter.body.setVelocity(0);
+            this.ball.body.setAngularVelocity(100);
+            this.playerCharacter.body.setVelocity(0);
 
         // Check for cursor key presses and move the player accordingly
         if (this.cursors.left.isDown) {
@@ -524,9 +525,9 @@ class GameScene extends Phaser.Scene {
         this.over = true;
         this.time.removeEvent(this.timeEvent);
         this.timeEvent = null;
+        this.finalText.setAlpha(1);
         this.countdownText.setText(`Game Over!`);
         this.scoreText.setText(`Final Score - Player: ${this.playerScore} - Enemy: ${this.enemyScore}`);
-        // initiateGameOver.bind(this)({ score: this.playerScore });
     }  
 };
 
