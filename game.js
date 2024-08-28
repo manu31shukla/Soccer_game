@@ -9,11 +9,11 @@ let assetsLoader = {
 };
 
 let soundsLoader = {
-    "background": "https://aicade-ui-assets.s3.amazonaws.com/GameAssets/sfx/damage_1.mp3",
-    "damage": "https://aicade-ui-assets.s3.amazonaws.com/GameAssets/sfx/damage_1.mp3",
-    "collect": "https://aicade-ui-assets.s3.amazonaws.com/GameAssets/sfx/collect_1.mp3",
-    "success": "https://aicade-ui-assets.s3.amazonaws.com/GameAssets/sfx/success_1.wav",
-    "lose": "https://aicade-ui-assets.s3.amazonaws.com/GameAssets/sfx/lose_2.mp3"
+    "background": "/assets/background.wav",
+    "whistle": "/assets/whiste.wav",
+    "success": "/assets/goal.wav",
+    "lose": "/assets/goal.wav",
+    "goal": "/assets/goal.wav",
 };
 
 class GameScene extends Phaser.Scene {
@@ -32,7 +32,7 @@ class GameScene extends Phaser.Scene {
         this.scoreText = null;
         this.timeText = null;
         this.difficultyText = null;
-        this.remainingTime = 20;
+        this.remainingTime = 90;
         this.movementEnabled = false;
         this.countdownText = null;
         this.roundNumber = 1;
@@ -44,6 +44,7 @@ class GameScene extends Phaser.Scene {
         this.bestClear = 0;
         this.bestClearText = null;
         this.lastScoringTeam = null;
+        this.isPaused = false;
     }
     preload() {
         displayProgressLoader.call(this);
@@ -55,7 +56,8 @@ class GameScene extends Phaser.Scene {
             this.load.audio(key, soundsLoader[key]);
           }
         
-          this.load.image("pauseButton", "https://aicade-ui-assets.s3.amazonaws.com/GameAssets/icons/pause.png");
+          this.load.image("pauseButton", "https://img.icons8.com/?size=100&id=AibrGCLNeCYz&format=png&color=ffffff");
+          this.load.image("resumeButton", "https://img.icons8.com/?size=100&id=398&format=png&color=ffffff");
 
           const fontName = 'pix';
           const fontBaseURL = "https://aicade-ui-assets.s3.amazonaws.com/GameAssets/fonts/"
@@ -68,8 +70,8 @@ class GameScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-ESC', () => this.pauseGame());
         this.pauseButton = this.add.image(this.game.config.width - 60, 60, "pauseButton");
         this.pauseButton.setInteractive({ cursor: 'pointer' });
-        this.pauseButton.setScale(2).setScrollFactor(0).setDepth(11);
-        this.pauseButton.on('pointerdown', () => this.pauseGame());
+        this.pauseButton.setScale(1).setScrollFactor(0).setDepth(11);
+        this.pauseButton.on('pointerdown', () => this.togglePause());
 
         //screen dimensions
         const screenWidth = this.game.config.width;
@@ -79,10 +81,11 @@ class GameScene extends Phaser.Scene {
         // this.vfx = new VFXLibrary(this);
 
         this.sounds = {};
-        for (const key in game.soundsLoader) {
+        for (const key in soundsLoader) {
         this.sounds[key] = this.sound.add(key, { loop: false, volume: 0.5 });
         }
-        // this.sounds.background.setVolume(2.5).setLoop(true).play();
+        // this.sounds.whistle.setVolume(0.5).setLoop(false).play();
+        this.sounds.background.setVolume(1.5).setLoop(true).play();
 
 
         // Background image
@@ -94,7 +97,7 @@ class GameScene extends Phaser.Scene {
         this.enemyTeam = [];
         this.playerScore = 0;
         this.enemyScore = 0;
-        this.remainingTime = 20;
+        this.remainingTime = 90;
         this.movementEnabled = false;
         this.roundNumber = 1;
         this.lastRoundplayerScore = 0;
@@ -280,17 +283,17 @@ class GameScene extends Phaser.Scene {
         const overlapY = obj2.y - obj1.y;
         
         if (Math.abs(overlapX) > Math.abs(overlapY)) {
-            obj1.x -= overlapX / 2;
-            obj2.x += overlapX / 2;
+            obj1.x -= overlapX / 4;
+            obj2.x += overlapX / 4;
         } else {
-            obj1.y -= overlapY / 2;
-            obj2.y += overlapY / 2;
+            obj1.y -= overlapY / 4;
+            obj2.y += overlapY / 4;
         }
         
-        obj1.body.velocity.x *= -.01;
-        obj1.body.velocity.y *= -.01;
-        obj2.body.velocity.x *= -.01;
-        obj2.body.velocity.y *= -.01;
+        obj1.body.velocity.x *= -.5;
+        obj1.body.velocity.y *= -.5;
+        obj2.body.velocity.x *= -.5;
+        obj2.body.velocity.y *= -.5;
     }
 
     kick(circle, goal) {
@@ -364,15 +367,16 @@ class GameScene extends Phaser.Scene {
     }
 
     scoreGoal(ball, goal) {
+        this.sounds.goal.setVolume(0.5).setLoop(false).play();
+
         if (goal === this.playerGoal) {
             this.enemyScore++;
-            this.sounds.damage.setVolume(0.5).setLoop(false).play();
-
+            this.sounds.whistle.setVolume(0.5).setLoop(false).play();            
             console.log('enemy score');
             this.lastScoringTeam = 'enemy';
         } else if (goal === this.enemyGoal) {
             this.playerScore++;
-            this.sounds.damage.setVolume(0.5).setLoop(false).play();
+            this.sounds.whistle.setVolume(0.5).setLoop(false).play();
 
             console.log('player score');
             this.lastScoringTeam = 'player';
@@ -406,6 +410,8 @@ class GameScene extends Phaser.Scene {
             loop: true,
             repeat: countdownValues.length - 1
         });
+            this.sounds.whistle.setVolume(0.5).setLoop(false).play();
+
     
         this.time.addEvent({
             delay: 4000, 
@@ -483,15 +489,36 @@ class GameScene extends Phaser.Scene {
         this.ball.body.setVelocity(0, 0);
     }
 
-    pauseGame() {
-        // handlePauseGame.bind(this)();
+    togglePause() {
+        if (this.isPaused) {
+            this.resumeGame();
+        } else {
+            this.pauseGame();
+        }
     }
+    
+    pauseGame() {
+        this.isPaused = true;
+        this.physics.pause();
+        this.timeEvent.paused = true;
+        this.sounds.background.pause(); 
+        this.pauseButton.setTexture('resumeButton'); 
+    }
+    
+    resumeGame() {
+        this.isPaused = false;
+        this.timeEvent.paused = false;
+        this.physics.resume();
+        this.sounds.background.resume(); 
+        this.pauseButton.setTexture('pauseButton'); 
+    }
+    
 
     endRound() {
-        // this.sounds.background.stop();
+        this.sounds.background.stop();
         const winner = this.playerScore > this.enemyScore ? 'Player team' : 'Enemy team';
-        // if(winner === 'Player team') this.sounds.success.setVolume(1).setLoop(false).play()
-        // else this.sounds.lose.setVolume(1).setLoop(false).play()
+        if(winner === 'Player team') this.sounds.success.setVolume(1).setLoop(false).play()
+        else this.sounds.lose.setVolume(1).setLoop(false).play()
         this.movementEnabled = false;
         this.stopAllPlayerMovement();
         this.over = true;
