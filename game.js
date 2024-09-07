@@ -174,6 +174,11 @@ class GameScene extends Phaser.Scene {
         // Input handling
         this.cursors = this.input.keyboard.createCursorKeys();
 
+        this.startKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+
+        // Display message to press Space to start
+        this.startText = this.add.bitmapText(screenWidth / 2, screenHeight / 2, 'pixelfont', 'Press SPACE to Start', 32).setOrigin(0.5);
+
         // UI elements
         this.scoreText = this.add.bitmapText(screenWidth / 2, 20, 'pixelfont', 'Player: 0 - Enemy: 0', 20).setOrigin(0.5);
         this.timeText = this.add.bitmapText(screenWidth / 2, 45, 'pixelfont', 'Time: 90.00', 20).setOrigin(0.5);
@@ -185,7 +190,13 @@ class GameScene extends Phaser.Scene {
 
 
         this.physics.world.setBounds(40, 0, screenWidth-80, screenHeight);
-        this.startRoundCountdown();
+        // this.startRoundCountdown();
+
+        this.input.keyboard.on('keydown-SPACE', () => {
+            if (!this.gameStarted) {
+                this.startGame();
+            }
+        });
 
     }
 
@@ -277,6 +288,17 @@ class GameScene extends Phaser.Scene {
         }
     
         return player;
+    }
+
+    startGame() {
+        this.gameStarted = true;  
+        this.startText.setVisible(false);  
+        this.sounds.whistle.play();
+        this.time.delayedCall(500, () => {
+            this.sounds.background.play();
+        });
+
+        this.startRoundCountdown();
     }
 
     handleOverlap(obj1, obj2) {
@@ -556,7 +578,7 @@ function displayProgressLoader() {
     const progressBar = this.add.graphics();
     this.load.on('progress', (value) => {
         progressBar.clear();
-        progressBar.fillStyle(0x364afe, 1);
+        progressBar.fillStyle(0x00FF00, 1);
         progressBar.fillRect(x, y, width * value, height);
     });
     this.load.on('complete', function () {
